@@ -1,0 +1,5 @@
+{
+  "name": "LingoFlash AI",
+  "description": "An intelligent flashcard generator using Gemini 2.5 Flash. Generates context-rich cards with pop-culture examples, translations, and pronunciations in seconds.",
+  "requestFramePermissions": []
+}
