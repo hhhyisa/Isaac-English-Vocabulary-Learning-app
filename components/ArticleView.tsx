@@ -135,22 +135,21 @@ export const ArticleView: React.FC<ArticleViewProps> = ({ article, onExit, onAdd
        {/* Word Inspector Modal */}
        {selectedWord && (
          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/30 backdrop-blur-sm animate-fade-in" onClick={() => setSelectedWord(null)}>
-            <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden" onClick={e => e.stopPropagation()}>
-               <div className="p-6 border-b border-slate-100 flex justify-between items-center bg-slate-50">
+            <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden flex flex-col max-h-[80vh]" onClick={e => e.stopPropagation()}>
+               <div className="p-6 border-b border-slate-100 flex justify-between items-center bg-slate-50 shrink-0">
                   <h3 className="text-2xl font-bold text-slate-800 capitalize">{selectedWord}</h3>
                   <button onClick={() => setSelectedWord(null)} className="text-slate-400 hover:text-slate-600">✕</button>
                </div>
                
-               <div className="p-6 min-h-[150px] flex flex-col justify-center">
+               <div className="p-6 overflow-y-auto custom-scrollbar">
                   {loadingDef ? (
-                    <div className="flex flex-col items-center justify-center space-y-3 text-indigo-500">
+                    <div className="flex flex-col items-center justify-center space-y-3 text-indigo-500 py-8">
                        <Loader2 size={32} className="animate-spin" />
                        <span className="text-sm font-medium">Looking up meaning...</span>
                     </div>
                   ) : definitionData ? (
                     <div className="space-y-4">
-                       <div>
-                          <div className="flex items-center space-x-3 mb-1">
+                       <div className="flex items-center space-x-3 mb-4">
                              <span className="text-sm font-mono text-slate-500 bg-slate-100 px-2 py-0.5 rounded">
                                {definitionData.pronunciation_ipa}
                              </span>
@@ -161,12 +160,21 @@ export const ArticleView: React.FC<ArticleViewProps> = ({ article, onExit, onAdd
                              >
                                 <Volume2 size={18} />
                              </button>
-                          </div>
-                          <p className="text-lg text-slate-800 font-medium">{definitionData.meanings.english}</p>
-                          <p className="text-indigo-600">{definitionData.meanings.chinese}</p>
+                        </div>
+                       
+                       <div className="space-y-3">
+                         {definitionData.meanings.map((m, idx) => (
+                           <div key={idx} className="border-l-2 border-indigo-200 pl-3">
+                              <span className="text-xs font-bold bg-indigo-50 text-indigo-600 px-1.5 py-0.5 rounded mb-1 inline-block">
+                                {m.partOfSpeech}
+                              </span>
+                              <p className="text-lg text-slate-800 font-medium leading-snug">{m.english}</p>
+                              <p className="text-indigo-600 text-sm mt-0.5">{m.chinese}</p>
+                           </div>
+                         ))}
                        </div>
                        
-                       <div className="bg-slate-50 p-4 rounded-xl border border-slate-100">
+                       <div className="bg-slate-50 p-4 rounded-xl border border-slate-100 mt-4">
                           <p className="italic text-slate-600 text-sm">"{definitionData.examples[0].sentence}"</p>
                           <p className="text-slate-400 text-xs mt-2">{definitionData.examples[0].translation}</p>
                        </div>
@@ -174,7 +182,7 @@ export const ArticleView: React.FC<ArticleViewProps> = ({ article, onExit, onAdd
                        <button 
                          onClick={handleAdd}
                          disabled={isAlreadyInLibrary(definitionData.word)}
-                         className={`w-full py-3 rounded-xl font-bold flex items-center justify-center space-x-2 transition-all
+                         className={`w-full py-3 rounded-xl font-bold flex items-center justify-center space-x-2 transition-all mt-4
                            ${isAlreadyInLibrary(definitionData.word) 
                              ? 'bg-green-100 text-green-700 cursor-default' 
                              : 'bg-indigo-600 text-white hover:bg-indigo-700 shadow-lg'}
@@ -194,7 +202,7 @@ export const ArticleView: React.FC<ArticleViewProps> = ({ article, onExit, onAdd
                        </button>
                     </div>
                   ) : (
-                     <p className="text-center text-red-400">Could not define word.</p>
+                     <p className="text-center text-red-400 py-8">Could not define word.</p>
                   )}
                </div>
             </div>

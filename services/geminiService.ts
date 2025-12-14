@@ -14,12 +14,17 @@ const FLASHCARD_SCHEMA = {
       word: { type: Type.STRING },
       pronunciation_ipa: { type: Type.STRING, description: "IPA pronunciation guide" },
       meanings: {
-        type: Type.OBJECT,
-        properties: {
-          english: { type: Type.STRING, description: "Concise English definition" },
-          chinese: { type: Type.STRING, description: "Concise Chinese definition" },
-        },
-        required: ["english", "chinese"],
+        type: Type.ARRAY,
+        description: "List of meanings for different parts of speech (e.g., noun, verb). Limit to the top 1-2 most common meanings.",
+        items: {
+          type: Type.OBJECT,
+          properties: {
+             partOfSpeech: { type: Type.STRING, description: "e.g., noun, verb, adj" },
+             english: { type: Type.STRING, description: "Concise English definition" },
+             chinese: { type: Type.STRING, description: "Concise Chinese definition" }
+          },
+          required: ["partOfSpeech", "english", "chinese"]
+        }
       },
       examples: {
         type: Type.ARRAY,
@@ -122,13 +127,14 @@ export const generateFlashcards = async (words: string[]): Promise<FlashcardData
       ${wordListString}
 
       Requirements:
-      1. Provide the definition, phonetics, and usage examples for this word. 
+      1. Provide the definitions, phonetics, and usage examples for this word. 
       2. The definition must be strictly aligned with standard dictionaries like Oxford, Cambridge, or Collins. Do not invent meanings.
       3. Provide the English and Chinese meaning.
-      4. Provide a pronunciation guide (IPA).
-      5. Provide exactly 2 example sentences per word. 
+      4. For the meanings, include the Part of Speech (e.g. noun, verb). If a word has multiple common parts of speech, include the top 1 or 2.
+      5. Provide a pronunciation guide (IPA).
+      6. Provide exactly 2 example sentences per word. 
          - Mix sources: One from Pop Culture/Comedy/Movies and one from News/Formal/General.
-      6. Return strict JSON.
+      7. Return strict JSON.
     `;
 
     const response = await ai.models.generateContent({

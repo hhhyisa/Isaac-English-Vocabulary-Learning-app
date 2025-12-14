@@ -15,7 +15,7 @@ export const StorySetup: React.FC<StorySetupProps> = ({ library, onGenerate, onB
   // Filter based on search
   const filteredLibrary = library.filter(c => 
     c.word.toLowerCase().includes(searchTerm.toLowerCase()) || 
-    c.meanings.english.toLowerCase().includes(searchTerm.toLowerCase())
+    c.meanings.some(m => m.english.toLowerCase().includes(searchTerm.toLowerCase()))
   );
 
   const toggleSelection = (id: string) => {
@@ -152,6 +152,7 @@ export const StorySetup: React.FC<StorySetupProps> = ({ library, onGenerate, onB
              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
                  {filteredLibrary.map(card => {
                     const isSelected = selectedIds.has(card.id);
+                    const primaryMeaning = card.meanings[0] || { english: '', chinese: '' };
                     return (
                         <div 
                           key={card.id}
@@ -171,8 +172,8 @@ export const StorySetup: React.FC<StorySetupProps> = ({ library, onGenerate, onB
                                     {isSelected ? <CheckSquare size={20} /> : <Square size={20} />}
                                 </div>
                             </div>
-                            <p className="text-xs text-slate-500 truncate mb-1">{card.meanings.english}</p>
-                            <p className="text-xs text-indigo-500 font-medium truncate">{card.meanings.chinese}</p>
+                            <p className="text-xs text-slate-500 truncate mb-1">{primaryMeaning.english}</p>
+                            <p className="text-xs text-indigo-500 font-medium truncate">{primaryMeaning.chinese}</p>
                         </div>
                     );
                  })}

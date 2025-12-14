@@ -20,8 +20,10 @@ export const PersonalCenter: React.FC<PersonalCenterProps> = ({ library, onRevie
 
   const filteredCards = library.filter(c =>
     c.word.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    c.meanings.english.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    c.meanings.chinese.includes(searchTerm)
+    // Check all English meanings
+    c.meanings.some(m => m.english.toLowerCase().includes(searchTerm.toLowerCase())) ||
+    // Check all Chinese meanings
+    c.meanings.some(m => m.chinese.includes(searchTerm))
   );
 
   const playAudio = (text: string, e: React.MouseEvent) => {
@@ -178,6 +180,8 @@ export const PersonalCenter: React.FC<PersonalCenterProps> = ({ library, onRevie
           {filteredCards.map((card) => {
              const isDue = !card.reviewData || card.reviewData.nextReviewDate <= now;
              const isSelected = selectedIds.has(card.id);
+             // Use the first meaning for the preview card
+             const primaryMeaning = card.meanings[0] || { english: 'No definition', chinese: '无释义', partOfSpeech: '?' };
 
              return (
               <div 
@@ -201,8 +205,11 @@ export const PersonalCenter: React.FC<PersonalCenterProps> = ({ library, onRevie
                 
                 <div className="mb-4">
                   <div className="text-sm font-mono text-slate-500 mb-2">{card.pronunciation_ipa}</div>
-                  <p className="text-slate-600 line-clamp-1">{card.meanings.english}</p>
-                  <p className="text-indigo-600 font-medium mt-1">{card.meanings.chinese}</p>
+                  <div className="flex items-start gap-2 mb-1">
+                    <span className="text-xs font-bold text-indigo-500 bg-indigo-50 px-1.5 py-0.5 rounded mt-0.5">{primaryMeaning.partOfSpeech}</span>
+                    <p className="text-slate-600 line-clamp-1">{primaryMeaning.english}</p>
+                  </div>
+                  <p className="text-indigo-600 font-medium pl-10">{primaryMeaning.chinese}</p>
                 </div>
 
                 <div className="pt-4 border-t border-slate-50 flex items-center justify-between text-xs font-medium">

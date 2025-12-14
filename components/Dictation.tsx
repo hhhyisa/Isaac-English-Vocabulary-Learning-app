@@ -19,6 +19,8 @@ export const Dictation: React.FC<DictationProps> = ({ cards, onExit }) => {
   const inputRef = useRef<HTMLInputElement>(null);
 
   const currentCard = sessionCards[currentIndex];
+  // Safe access to first meaning
+  const primaryMeaning = currentCard?.meanings[0] || { english: '', chinese: '', partOfSpeech: '' };
 
   const playAudio = (text: string) => {
     const utterance = new SpeechSynthesisUtterance(text);
@@ -111,10 +113,10 @@ export const Dictation: React.FC<DictationProps> = ({ cards, onExit }) => {
         <div className="h-40 bg-gradient-to-r from-indigo-500 to-purple-600 flex flex-col items-center justify-center text-white p-6 text-center relative">
            <ImageIcon className="text-white/20 absolute top-4 right-4 w-12 h-12" />
            <p className="text-2xl font-bold leading-tight drop-shadow-md">
-             {currentCard.meanings.chinese}
+             {primaryMeaning.chinese}
            </p>
            <p className="text-indigo-100 text-lg mt-2 font-medium opacity-90">
-             {currentCard.meanings.english}
+             {primaryMeaning.english}
            </p>
         </div>
 

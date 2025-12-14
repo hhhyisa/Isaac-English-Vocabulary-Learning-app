@@ -1,3 +1,4 @@
+
 export interface Example {
   sentence: string;
   translation: string;
@@ -12,14 +13,17 @@ export interface ReviewData {
   easeFactor: number; // Multiplier
 }
 
+export interface Meaning {
+  partOfSpeech: string;
+  english: string;
+  chinese: string;
+}
+
 export interface FlashcardData {
   id: string;
   word: string;
   pronunciation_ipa?: string;
-  meanings: {
-    english: string;
-    chinese: string;
-  };
+  meanings: Meaning[]; // Changed to array to support POS
   examples: Example[];
   reviewData?: ReviewData;
 }

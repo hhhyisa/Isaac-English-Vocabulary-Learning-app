@@ -15,6 +15,7 @@ export const Quiz: React.FC<QuizProps> = ({ cards, onExit }) => {
     return cards.map((card) => {
       // Create a "Meaning to Word" question
       const isMeaningToWord = Math.random() > 0.5;
+      const primaryMeaning = card.meanings[0]; // Use first meaning for consistency in quiz
       
       const distractors = cards
         .filter(c => c.id !== card.id)
@@ -23,7 +24,7 @@ export const Quiz: React.FC<QuizProps> = ({ cards, onExit }) => {
 
       if (isMeaningToWord) {
         return {
-          question: card.meanings.chinese, // Use Chinese meaning as question
+          question: primaryMeaning.chinese, // Use Chinese meaning as question
           correctAnswer: card.word,
           options: [card.word, ...distractors.map(d => d.word)].sort(() => 0.5 - Math.random()),
           type: 'meaning-to-word',
@@ -32,8 +33,8 @@ export const Quiz: React.FC<QuizProps> = ({ cards, onExit }) => {
       } else {
         return {
           question: card.word,
-          correctAnswer: card.meanings.english, // Use English definition as answer
-          options: [card.meanings.english, ...distractors.map(d => d.meanings.english)].sort(() => 0.5 - Math.random()),
+          correctAnswer: primaryMeaning.english, // Use English definition as answer
+          options: [primaryMeaning.english, ...distractors.map(d => d.meanings[0].english)].sort(() => 0.5 - Math.random()),
           type: 'word-to-meaning',
           originalCardId: card.id
         } as QuizQuestion;

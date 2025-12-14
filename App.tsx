@@ -28,16 +28,31 @@ const App: React.FC = () => {
   const [view, setView] = useState<AppView>(AppView.INPUT);
   const [activeDeck, setActiveDeck] = useState<FlashcardData[]>([]);
   
-  // Initialize library lazily from local storage
+  // Initialize library lazily from local storage with MIGRATION logic
   const [library, setLibrary] = useState<FlashcardData[]>(() => {
     if (typeof window === 'undefined') return [];
     const saved = localStorage.getItem(STORAGE_KEY);
     if (saved) {
       try {
         const parsed = JSON.parse(saved);
-        return parsed.map((c: any) => 
-          c.reviewData ? c : { ...c, reviewData: initializeReviewData() }
-        );
+        return parsed.map((c: any) => {
+            // Migration: Convert legacy meaning object to array
+            let meanings = c.meanings;
+            if (meanings && !Array.isArray(meanings)) {
+                // If it's the old format {english: string, chinese: string}
+                meanings = [{
+                    partOfSpeech: 'general',
+                    english: meanings.english,
+                    chinese: meanings.chinese
+                }];
+            }
+
+            return {
+                ...c,
+                meanings: meanings,
+                reviewData: c.reviewData ? c.reviewData : initializeReviewData()
+            };
+        });
       } catch (e) {
         console.error("Failed to load library", e);
         return [];
@@ -476,99 +491,80 @@ const App: React.FC = () => {
                             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400" size={18} />
                             <input 
                               type="text" 
-                              placeholder="Find in deck..." 
-                              className="w-full pl-10 pr-4 py-2 rounded-full border border-slate-200 focus:ring-2 focus:ring-indigo-500 focus:border-transparent shadow-sm bg-white/80 backdrop-blur-sm transition-all"
+                              placeholder="Find in deck..."
                               onChange={handleDeckSearch}
+                              className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-slate-200 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100 transition-all shadow-sm"
                             />
                         </div>
                     </div>
                  )}
+                 
+                 {/* Card Display */}
+                 <div className="relative w-full flex justify-center mb-8">
+                     {/* Navigation Buttons - Desktop/Tablet Side */}
+                     {activeDeck.length > 1 && (
+                       <>
+                         <button 
+                           onClick={prevCard}
+                           className="hidden md:flex absolute left-0 top-1/2 transform -translate-y-1/2 -translate-x-12 p-3 text-slate-400 hover:text-indigo-600 hover:bg-white rounded-full transition-all"
+                         >
+                           <ChevronLeft size={32} />
+                         </button>
+                         <button 
+                           onClick={nextCard}
+                           className="hidden md:flex absolute right-0 top-1/2 transform -translate-y-1/2 translate-x-12 p-3 text-slate-400 hover:text-indigo-600 hover:bg-white rounded-full transition-all"
+                         >
+                           <ChevronRight size={32} />
+                         </button>
+                       </>
+                     )}
 
-                 <div className="relative flex flex-col md:flex-row items-center justify-center w-full gap-6">
-                   
-                   {/* Previous Button */}
-                   {view === AppView.FLASHCARDS && (
-                     <button 
-                       onClick={prevCard}
-                       className="hidden md:flex p-4 rounded-full bg-white shadow-xl hover:bg-slate-50 text-slate-600 transition-all hover:scale-110 active:scale-95 border border-slate-100 z-10"
-                       title="Previous Card"
-                     >
-                       <ChevronLeft size={32} />
-                     </button>
-                   )}
-
-                   {/* Card */}
-                   <div className="transform scale-[0.85] md:scale-90 lg:scale-100 transition-transform origin-center">
-                        <Flashcard 
-                            data={activeDeck[currentCardIndex]} 
-                            onRate={view === AppView.REVIEW ? handleSRSRating : undefined}
-                        />
-                   </div>
-
-                   {/* Next Button */}
-                   {view === AppView.FLASHCARDS && (
-                     <button 
-                       onClick={nextCard}
-                       className="hidden md:flex p-4 rounded-full bg-white shadow-xl hover:bg-slate-50 text-slate-600 transition-all hover:scale-110 active:scale-95 border border-slate-100 z-10"
-                        title="Next Card"
-                     >
-                       <ChevronRight size={32} />
-                     </button>
-                   )}
-
-                    {/* Mobile Navigation */}
-                    {view === AppView.FLASHCARDS && (
-                       <div className="flex md:hidden items-center justify-between w-full max-w-sm mt-4">
-                           <button 
-                             onClick={prevCard}
-                             className="p-4 rounded-full bg-white shadow-lg text-slate-600 border border-slate-100 active:scale-95"
-                           >
-                             <ChevronLeft size={28} />
-                           </button>
-                           
-                           <div className="bg-white px-4 py-2 rounded-full shadow-sm border border-slate-100 text-slate-500 font-mono text-sm flex items-center space-x-2">
-                             <span>{currentCardIndex + 1} / {activeDeck.length}</span>
-                             {backgroundLoading && <Loader2 size={12} className="animate-spin text-indigo-500" />}
-                           </div>
-
-                           <button 
-                             onClick={nextCard}
-                             className="p-4 rounded-full bg-white shadow-lg text-slate-600 border border-slate-100 active:scale-95"
-                           >
-                             <ChevronRight size={28} />
-                           </button>
-                       </div>
-                    )}
+                     <Flashcard 
+                       data={activeDeck[currentCardIndex]} 
+                       onRate={view === AppView.REVIEW ? handleSRSRating : undefined}
+                     />
                  </div>
 
-                 {/* Desktop Counter */}
-                 {view === AppView.FLASHCARDS && (
-                   <div className="hidden md:flex mt-8 bg-white px-6 py-2 rounded-full shadow-sm border border-slate-100 text-slate-500 font-mono text-lg items-center space-x-3">
-                     <span>{currentCardIndex + 1} / {activeDeck.length}</span>
-                     {backgroundLoading && (
-                        <div className="flex items-center space-x-2 pl-3 border-l border-slate-200">
-                           <Loader2 size={16} className="animate-spin text-indigo-500" />
-                           <span className="text-sm text-indigo-500">Generating more...</span>
-                        </div>
-                     )}
-                   </div>
+                 {/* Mobile Navigation */}
+                 {activeDeck.length > 1 && (
+                    <div className="flex md:hidden items-center justify-between w-full max-w-xs px-4">
+                        <button 
+                           onClick={prevCard}
+                           className="p-4 bg-white shadow-md rounded-full text-slate-600 hover:text-indigo-600"
+                         >
+                           <ChevronLeft size={24} />
+                         </button>
+                         <span className="font-bold text-slate-400 text-sm">
+                           {currentCardIndex + 1} / {activeDeck.length}
+                         </span>
+                         <button 
+                           onClick={nextCard}
+                           className="p-4 bg-white shadow-md rounded-full text-slate-600 hover:text-indigo-600"
+                         >
+                           <ChevronRight size={24} />
+                         </button>
+                    </div>
                  )}
-                 
-                 {view === AppView.REVIEW && (
-                   <button 
-                     onClick={() => setView(AppView.PERSONAL_CENTER)}
-                     className="mt-8 text-slate-400 hover:text-red-600 flex items-center space-x-2 text-sm font-medium transition-colors"
-                   >
-                     <span>Exit Review</span>
-                   </button>
+
+                 {view === AppView.FLASHCARDS && (
+                    <div className="mt-4">
+                        <button 
+                           onClick={() => setView(AppView.QUIZ)}
+                           className="px-8 py-3 bg-indigo-600 text-white font-bold rounded-xl shadow-lg hover:bg-indigo-700 transition-all flex items-center space-x-2"
+                        >
+                           <PlayCircle size={20} />
+                           <span>Start Quiz</span>
+                        </button>
+                    </div>
                  )}
 
                </div>
              )}
 
-             {view === AppView.QUIZ && (
-               <Quiz cards={activeDeck} onExit={() => setView(AppView.FLASHCARDS)} />
+             {view === AppView.QUIZ && activeDeck.length > 0 && (
+                <Quiz cards={activeDeck} onExit={() => setView(AppView.FLASHCARDS)} />
              )}
+
           </div>
       </main>
     </div>

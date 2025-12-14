@@ -48,18 +48,18 @@ export const Flashcard: React.FC<FlashcardProps> = ({ data, onRate }) => {
       <div className={`relative w-full h-full duration-500 transform-style-3d transition-transform ${isFlipped ? 'rotate-y-180' : ''}`}>
         
         {/* FRONT */}
-        <div className="absolute w-full h-full backface-hidden rounded-3xl bg-white shadow-2xl border border-slate-100 p-6 md:p-12 flex flex-col items-center justify-center">
+        <div className="absolute w-full h-full backface-hidden rounded-3xl bg-white shadow-2xl border border-slate-100 p-6 md:p-12 flex flex-col items-center justify-center overflow-hidden">
           <div className="absolute top-6 right-6 md:top-10 md:right-10">
              <span className="px-4 py-1.5 bg-indigo-50 text-indigo-600 text-xs md:text-sm font-bold rounded-full uppercase tracking-wider">
                Word
              </span>
           </div>
 
-          <h2 className="text-5xl md:text-8xl font-extrabold text-slate-800 mb-4 text-center tracking-tight break-words max-w-full leading-tight">
+          <h2 className="text-5xl md:text-7xl font-extrabold text-slate-800 mb-4 text-center tracking-tight break-words max-w-full leading-tight">
             {data.word}
           </h2>
           
-          <div className="flex items-center space-x-3 text-slate-500 mb-8 bg-slate-50 px-6 py-3 rounded-full">
+          <div className="flex items-center space-x-3 text-slate-500 mb-6 bg-slate-50 px-6 py-3 rounded-full">
             <span className="font-mono text-xl md:text-3xl">{data.pronunciation_ipa || `/${data.word}/`}</span>
             <button 
               onClick={(e) => playAudio(data.word, 'en-US', e)}
@@ -69,10 +69,17 @@ export const Flashcard: React.FC<FlashcardProps> = ({ data, onRate }) => {
             </button>
           </div>
 
-          <div className="mb-8 max-w-3xl">
-             <p className="text-2xl md:text-3xl text-slate-600 font-medium text-center leading-relaxed">
-               {data.meanings.english}
-             </p>
+          <div className="mb-8 w-full max-w-2xl space-y-3 overflow-y-auto max-h-[30vh] custom-scrollbar px-4">
+             {data.meanings.map((meaning, idx) => (
+               <div key={idx} className="flex flex-col items-center text-center border-b last:border-0 border-slate-100 pb-3 last:pb-0">
+                 <span className="text-xs font-bold text-indigo-500 uppercase tracking-wider mb-1 px-2 py-0.5 bg-indigo-50 rounded-md">
+                   {meaning.partOfSpeech}
+                 </span>
+                 <p className="text-xl md:text-2xl text-slate-600 font-medium leading-relaxed">
+                   {meaning.english}
+                 </p>
+               </div>
+             ))}
           </div>
 
           <p className="text-slate-400 text-sm md:text-base font-medium mt-auto animate-pulse">Tap to reveal</p>
@@ -80,12 +87,26 @@ export const Flashcard: React.FC<FlashcardProps> = ({ data, onRate }) => {
 
         {/* BACK */}
         <div className="absolute w-full h-full backface-hidden rotate-y-180 rounded-3xl bg-gradient-to-br from-indigo-600 to-purple-800 shadow-2xl p-6 md:p-10 text-white flex flex-col overflow-hidden text-left">
-           <div className="flex flex-col md:flex-row justify-between items-start mb-4 md:mb-6 gap-4">
-              <div className="flex-1 pr-4">
-                <h3 className="text-3xl md:text-4xl font-bold mb-2 leading-tight">{data.meanings.chinese}</h3>
-                <p className="text-lg md:text-lg text-indigo-200 font-medium leading-tight opacity-80">{data.meanings.english}</p>
+           <div className="flex flex-col mb-4 md:mb-6 shrink-0">
+              <h3 className="text-3xl md:text-4xl font-bold mb-3 leading-tight">{data.word}</h3>
+              
+              <div className="space-y-3 max-h-[20vh] overflow-y-auto custom-scrollbar pr-2">
+                {data.meanings.map((meaning, idx) => (
+                  <div key={idx} className="flex flex-col text-left border-l-2 border-indigo-400 pl-3">
+                     <div className="flex items-center gap-2 mb-1">
+                        <span className="text-xs font-bold bg-white/20 px-2 py-0.5 rounded text-indigo-100 uppercase">
+                          {meaning.partOfSpeech}
+                        </span>
+                        <span className="text-lg md:text-xl font-bold text-white">{meaning.chinese}</span>
+                     </div>
+                     <p className="text-sm md:text-base text-indigo-200 leading-tight opacity-90">{meaning.english}</p>
+                  </div>
+                ))}
               </div>
-              <span className="self-start md:self-center px-3 py-1 bg-white/20 backdrop-blur-md text-white text-xs font-bold rounded-full uppercase tracking-wider border border-white/10 shrink-0">
+           </div>
+
+           <div className="flex items-center space-x-2 mb-2 shrink-0">
+              <span className="px-3 py-1 bg-white/20 backdrop-blur-md text-white text-xs font-bold rounded-full uppercase tracking-wider border border-white/10">
                Examples
              </span>
            </div>
@@ -121,7 +142,7 @@ export const Flashcard: React.FC<FlashcardProps> = ({ data, onRate }) => {
           </div>
 
            {/* REFERENCES SECTION */}
-           <div className="mt-4 pt-3 border-t border-white/20 shrink-0">
+           <div className="mt-4 pt-3 border-t border-white/20 shrink-0 hidden md:block">
               <div className="flex items-center space-x-2 mb-2">
                  <Book size={14} className="text-indigo-200" />
                  <span className="text-xs font-bold uppercase tracking-wider text-indigo-200">References</span>
@@ -145,16 +166,6 @@ export const Flashcard: React.FC<FlashcardProps> = ({ data, onRate }) => {
                    className="flex items-center space-x-1 px-3 py-1.5 bg-white/10 hover:bg-white/20 rounded-lg text-xs transition-colors text-white"
                  >
                    <span>Cambridge</span>
-                   <ExternalLink size={10} />
-                 </a>
-                 <a 
-                   href={`https://www.collinsdictionary.com/dictionary/english/${data.word}`} 
-                   target="_blank" 
-                   rel="noopener noreferrer"
-                   onClick={(e) => e.stopPropagation()}
-                   className="flex items-center space-x-1 px-3 py-1.5 bg-white/10 hover:bg-white/20 rounded-lg text-xs transition-colors text-white"
-                 >
-                   <span>Collins</span>
                    <ExternalLink size={10} />
                  </a>
               </div>
