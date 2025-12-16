@@ -143,8 +143,6 @@ export const generateFlashcards = async (words: string[]): Promise<FlashcardData
       config: {
         responseMimeType: "application/json",
         responseSchema: FLASHCARD_SCHEMA,
-        // Adjusted token limit for efficiency while maintaining capacity
-        maxOutputTokens: 8192, 
         systemInstruction: "You are an expert language tutor. You prioritize dictionary accuracy above all else.",
       },
     });
