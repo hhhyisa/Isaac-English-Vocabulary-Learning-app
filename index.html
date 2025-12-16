@@ -5,56 +5,88 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>LingoFlash AI</title>
   <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
 </head>
-<body class="bg-gray-100 min-h-screen flex items-center justify-center">
+<body class="bg-slate-50 min-h-screen flex items-center justify-center p-4">
 
-  <div class="bg-white p-8 rounded-xl shadow-2xl max-w-md w-full text-center space-y-6">
-    <div class="space-y-2">
-      <h1 class="text-3xl font-bold text-indigo-600">LingoFlash AI ⚡️</h1>
-      <p class="text-gray-500">你的智能单词助手</p>
+  <div class="bg-white p-8 rounded-2xl shadow-xl max-w-md w-full border border-slate-100">
+    <div class="text-center space-y-2 mb-8">
+      <h1 class="text-4xl font-extrabold text-indigo-600 tracking-tight">LingoFlash ⚡️</h1>
+      <p class="text-slate-400 text-sm">由 Gemini Pro 提供智力支持</p>
     </div>
 
-    <div class="text-left">
-      <label class="block text-sm font-medium text-gray-700 mb-1">输入你想学的单词：</label>
-      <input type="text" id="wordInput" placeholder="例如: Serendipity" 
-             class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition">
+    <div class="space-y-4">
+      <div>
+        <label class="block text-sm font-medium text-slate-700 mb-1 ml-1">输入单词或短语</label>
+        <input type="text" id="wordInput" placeholder="例如: Serendipity" 
+               class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition text-slate-700 placeholder-slate-400">
+      </div>
+
+      <button onclick="generateContent()" id="generateBtn"
+              class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3.5 px-4 rounded-xl transition transform active:scale-[0.98] shadow-lg shadow-indigo-200 flex items-center justify-center gap-2">
+        <span>✨ 生成单词卡</span>
+      </button>
     </div>
 
-    <button onclick="generateContent()" 
-            class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 px-4 rounded-lg transition transform active:scale-95 shadow-md">
-      ✨ 生成单词卡
-    </button>
-
-    <div id="resultArea" class="hidden mt-6 p-4 bg-gray-50 rounded-lg border border-gray-200 text-left text-sm text-gray-700">
-      正在思考中...
-    </div>
+    <div id="resultArea" class="hidden mt-8 p-6 bg-indigo-50 rounded-xl border border-indigo-100 text-slate-700 leading-relaxed prose prose-indigo max-w-none">
+      </div>
   </div>
 
   <script>
-    async function generateContent() {
-      const input = document.getElementById('wordInput').value;
-      const resultBox = document.getElementById('resultArea');
-      
-      if (!input) return alert("请输入一个单词！");
+    // 🔴 🔴 🔴 请把你的 Key 填在引号里面！🔴 🔴 🔴
+    const API_KEY = "AIzaSyB8D5MbiI-kDKOmeo6xNLxAwzCMTW6gl5w"; 
 
-      // 显示加载状态
+    async function generateContent() {
+      const input = document.getElementById('wordInput').value.trim();
+      const resultBox = document.getElementById('resultArea');
+      const btn = document.getElementById('generateBtn');
+      
+      if (!input) return alert("请先输入一个单词！");
+      if (API_KEY.includes("在这里填入")) return alert("帅哥，你忘填 API Key 了！请去 index.html 修改代码。");
+
+      // UI 变为加载状态
+      btn.disabled = true;
+      btn.innerHTML = `<svg class="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg> 思考中...`;
       resultBox.classList.remove('hidden');
-      resultBox.innerHTML = "🤖 AI 正在疯狂查阅字典...";
+      resultBox.innerHTML = "<span class='text-gray-500'>正在连接 Gemini 大脑...</span>";
 
       try {
-        // 这里我们用一个临时的测试逻辑，证明 API Key 生效了
-        // 因为在浏览器直接调 API 不安全，我们先模拟成功，确认界面能动
-        setTimeout(() => {
-          resultBox.innerHTML = `
-            <div class="font-bold text-lg text-indigo-800 mb-2">${input}</div>
-            <p><strong>意思：</strong>这是一个非常棒的单词！(测试成功)</p>
-            <p class="mt-2 text-green-600 font-semibold">✅ 恭喜！你的网站已经活过来了！</p>
-            <p class="text-xs text-gray-400 mt-2">现在我们可以去接入真正的 Gemini API 了。</p>
-          `;
-        }, 1000);
+        // 1. 构造 Prompt (你可以随意修改这里的提示词)
+        const prompt = `
+          请作为一个专业的英语老师，为单词 "${input}" 制作一张学习卡片。
+          请用中文回答，格式要求如下：
+          1. **单词音标**
+          2. **中文释义** (简明扼要)
+          3. **记忆技巧** (词根词缀或谐音，有趣一点)
+          4. **地道例句** (中英对照，1句即可)
+          5. **瑞士 VS 中国学生常犯错误** (简短对比，如果没有就不用写)
+          请使用 Markdown 格式，不要废话，直接输出内容。
+        `;
+
+        // 2. 发送请求给 Google Gemini
+        const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=${API_KEY}`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            contents: [{ parts: [{ text: prompt }] }]
+          })
+        });
+
+        const data = await response.json();
+
+        // 3. 处理结果
+        if (data.error) throw new Error(data.error.message);
+        const aiText = data.candidates[0].content.parts[0].text;
         
+        // 4. 显示结果 (用 marked 库把 markdown 变漂亮)
+        resultBox.innerHTML = marked.parse(aiText);
+
       } catch (error) {
-        resultBox.innerHTML = `<span class="text-red-500">出错啦: ${error.message}</span>`;
+        resultBox.innerHTML = `<div class="text-red-500 font-bold">😭 出错了: ${error.message}</div>`;
+      } finally {
+        // 恢复按钮
+        btn.disabled = false;
+        btn.innerHTML = "✨ 生成单词卡";
       }
     }
   </script>
