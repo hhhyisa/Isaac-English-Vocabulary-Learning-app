@@ -1,36 +1,16 @@
-// 1. 这一行删掉了，因为你没有css文件，我们靠 CDN 撑场面
-// import './index.css' 
+// 注意：不要 import 任何 AI 相关的包，否则会报错崩溃
+const app = document.querySelector('#app')
 
-// 2. 找到 HTML 里的那个盒子
-const app = document.querySelector<HTMLDivElement>('#app')
-
-// 3. 渲染内容
 if (app) {
   app.innerHTML = `
-    <div class="min-h-screen bg-gray-100 flex flex-col items-center justify-center p-4">
-      <div class="bg-white p-8 rounded-xl shadow-lg max-w-md w-full text-center">
-        <h1 class="text-3xl font-bold text-blue-600 mb-4">
-          LingoFlash AI ⚡️
-        </h1>
-        <p class="text-gray-600 mb-6">
-          帅哥，你的网站修好啦！即使没有 CSS 文件，
-          Tailwind CDN 也会帮你把它变得很漂亮。
-        </p>
-        <button id="test-btn" class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded transition">
-          点击测试
-        </button>
-        <p id="result" class="mt-4 text-sm text-gray-500"></p>
+    <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; font-family: sans-serif;">
+      <h1 style="font-size: 30px; color: green;">🎉 界面终于修好了！</h1>
+      <p style="color: gray; margin-top: 20px;">
+        白屏消失了。现在网页已经能运行了。
+      </p>
+      <div style="margin-top: 20px; padding: 15px; background: #f0f0f0; border-radius: 8px;">
+        <strong>下一步：</strong> 去 Vercel 设置 API Key 才能开启 AI 功能。
       </div>
     </div>
   `
-
-  // 4. 添加交互
-  const btn = document.querySelector<HTMLButtonElement>('#test-btn')
-  const result = document.querySelector<HTMLParagraphElement>('#result')
-  
-  if (btn && result) {
-    btn.addEventListener('click', () => {
-      result.textContent = "测试成功！代码运行正常 ✅"
-    })
-  }
 }
