@@ -1,53 +1,53 @@
-import { GoogleGenAI, Type } from "@google/genai";
+import { GoogleGenerativeAI, SchemaType } from "@google/generative-ai";
 import { FlashcardData, GeneratedArticle } from "../types";
 import { initializeReviewData } from "../utils/srs";
 
-// Safe access to environment variable
-const getApiKey = () => process.env.API_KEY || '';
+// 1. 这里的 Key 必须用 Vite 的方式获取
+// 如果你不想用 Vercel 环境变量，想暴力测试，可以直接 const API_KEY = "你的key";
+const API_KEY = import.meta.env.VITE_GEMINI_API_KEY || "";
 
 // Lazy initialization helper
 const getAIClient = () => {
-  const key = getApiKey();
-  if (!key) {
-    throw new Error("API Key is missing. Please check your settings.");
+  if (!API_KEY) {
+    throw new Error("API Key is missing. Please check your .env file or Vercel settings.");
   }
-  return new GoogleGenAI({ apiKey: key });
+  return new GoogleGenerativeAI(API_KEY);
 };
 
+// 2. Schema 定义需要使用 SchemaType
 const FLASHCARD_SCHEMA = {
-  type: Type.ARRAY,
+  type: SchemaType.ARRAY,
   items: {
-    type: Type.OBJECT,
+    type: SchemaType.OBJECT,
     properties: {
-      word: { type: Type.STRING },
-      pronunciation_ipa: { type: Type.STRING, description: "IPA pronunciation guide" },
+      word: { type: SchemaType.STRING },
+      pronunciation_ipa: { type: SchemaType.STRING, description: "IPA pronunciation guide" },
       meanings: {
-        type: Type.ARRAY,
-        description: "List of meanings for different parts of speech (e.g., noun, verb). Limit to the top 1-2 most common meanings.",
+        type: SchemaType.ARRAY,
+        description: "List of meanings for different parts of speech.",
         items: {
-          type: Type.OBJECT,
+          type: SchemaType.OBJECT,
           properties: {
-             partOfSpeech: { type: Type.STRING, description: "e.g., noun, verb, adj" },
-             english: { type: Type.STRING, description: "Concise English definition" },
-             chinese: { type: Type.STRING, description: "Concise Chinese definition" }
+            partOfSpeech: { type: SchemaType.STRING, description: "e.g., noun, verb, adj" },
+            english: { type: SchemaType.STRING, description: "Concise English definition" },
+            chinese: { type: SchemaType.STRING, description: "Concise Chinese definition" }
           },
           required: ["partOfSpeech", "english", "chinese"]
         }
       },
       examples: {
-        type: Type.ARRAY,
-        description: "List of exactly 2 distinct example sentences from different contexts.",
+        type: SchemaType.ARRAY,
+        description: "List of exactly 2 distinct example sentences.",
         items: {
-          type: Type.OBJECT,
+          type: SchemaType.OBJECT,
           properties: {
-            sentence: { type: Type.STRING, description: "An example sentence. PREFER quotes from popular culture, news, comedy, or viral videos." },
-            translation: { type: Type.STRING, description: "Chinese translation of the sentence" },
+            sentence: { type: SchemaType.STRING },
+            translation: { type: SchemaType.STRING },
             source_type: { 
-              type: Type.STRING, 
-              enum: ["News", "Comedy", "YouTube", "Movie", "General"],
-              description: "The type of source the example mimics or comes from."
+              type: SchemaType.STRING, 
+              enum: ["News", "Comedy", "YouTube", "Movie", "General"]
             },
-            source_context: { type: Type.STRING, description: "Specific source if applicable (e.g. 'The Office', 'BBC News', 'TED Talk')" },
+            source_context: { type: SchemaType.STRING },
           },
           required: ["sentence", "translation", "source_type"],
         }
@@ -58,12 +58,18 @@ const FLASHCARD_SCHEMA = {
 };
 
 const ARTICLE_SCHEMA = {
-  type: Type.OBJECT,
+  type: SchemaType.OBJECT,
   properties: {
-    title: { type: Type.STRING },
-    content: { type: Type.STRING, description: "The full text of the article/story." },
+    title: { type: SchemaType.STRING },
+    content: { type: SchemaType.STRING, description: "The full text of the article/story." },
   },
   required: ["title", "content"],
+};
+
+// --- Helper: Clean JSON string from Markdown ---
+// 防止 AI 返回 ```json ... ``` 导致解析失败
+const cleanJsonText = (text: string): string => {
+  return text.replace(/```json/g, "").replace(/```/g, "").trim();
 };
 
 // --- Caching Helpers ---
@@ -94,24 +100,29 @@ const saveWordToCache = (word: string, data: FlashcardData) => {
 const validateWordWithDictionary = async (word: string): Promise<boolean> => {
   try {
     const cleanWord = word.trim();
-    // Use the Free Dictionary API as the Gatekeeper
     const response = await fetch(`https://api.dictionaryapi.dev/api/v2/entries/en/${encodeURIComponent(cleanWord)}`);
-    
-    if (response.status === 404) {
-      return false;
-    }
+    if (response.status === 404) return false;
     return true;
   } catch (error) {
     console.warn(`Dictionary validation error for ${word}:`, error);
+    // 如果字典API挂了，为了不阻塞用户，我们暂时放行 (返回 true)，或者严格拦截 (返回 false)
     return false; 
   }
 };
 
 export const generateFlashcards = async (words: string[]): Promise<FlashcardData[]> => {
-  // Check API Key before doing anything else
-  const ai = getAIClient();
+  const genAI = getAIClient();
+  
+  // 3. 使用正确的模型名称 (1.5-flash)
+  const model = genAI.getGenerativeModel({
+    model: "gemini-1.5-flash", 
+    systemInstruction: "You are an expert language tutor. You prioritize dictionary accuracy above all else.",
+    generationConfig: {
+      responseMimeType: "application/json",
+      responseSchema: FLASHCARD_SCHEMA,
+    },
+  });
 
-  // Step 1: Strict Validation (The Gatekeeper)
   const validationResults = await Promise.all(
     words.map(async (word) => {
       const isValid = await validateWordWithDictionary(word);
@@ -127,42 +138,29 @@ export const generateFlashcards = async (words: string[]): Promise<FlashcardData
 
   try {
     const wordListString = words.join(", ");
-    // Updated Prompt for Authoritative Content
     const prompt = `
-      Create a list of flashcards for the following vocabulary words:
-      ${wordListString}
-
+      Create a list of flashcards for the following vocabulary words: ${wordListString}
       Requirements:
-      1. Provide the definitions, phonetics, and usage examples for this word. 
-      2. The definition must be strictly aligned with standard dictionaries like Oxford, Cambridge, or Collins. Do not invent meanings.
-      3. Provide the English and Chinese meaning.
-      4. For the meanings, include the Part of Speech (e.g. noun, verb). If a word has multiple common parts of speech, include the top 1 or 2.
-      5. Provide a pronunciation guide (IPA).
-      6. Provide exactly 2 example sentences per word. 
-         - Mix sources: One from Pop Culture/Comedy/Movies and one from News/Formal/General.
-      7. Return strict JSON.
+      1. Provide definitions, phonetics (IPA), and usage examples. 
+      2. Strictly aligned with Oxford/Cambridge dictionaries.
+      3. Include English and Chinese meanings.
+      4. Provide exactly 2 example sentences per word (1 Pop Culture, 1 General).
+      5. Return strict JSON.
     `;
 
-    const response = await ai.models.generateContent({
-      model: 'gemini-2.5-flash',
-      contents: prompt,
-      config: {
-        responseMimeType: "application/json",
-        responseSchema: FLASHCARD_SCHEMA,
-        systemInstruction: "You are an expert language tutor. You prioritize dictionary accuracy above all else.",
-      },
-    });
+    const result = await model.generateContent(prompt);
+    const response = await result.response;
+    const text = cleanJsonText(response.text()); // 安全解析
 
-    const text = response.text;
     if (!text) throw new Error("No response from AI");
 
     const rawData = JSON.parse(text);
     
-    // Enrich with IDs using randomUUID for robustness in parallel calls
+    // Enrich with IDs
     const formattedData: FlashcardData[] = rawData.map((item: any) => ({
       ...item,
       id: `card-${crypto.randomUUID()}`,
-      reviewData: initializeReviewData(), // Init SRS data
+      reviewData: initializeReviewData(),
     }));
 
     return formattedData;
@@ -174,40 +172,36 @@ export const generateFlashcards = async (words: string[]): Promise<FlashcardData
 };
 
 export const generateArticle = async (words: string[]): Promise<GeneratedArticle> => {
-  // Check API Key first
-  const ai = getAIClient();
+  const genAI = getAIClient();
+  const model = genAI.getGenerativeModel({
+    model: "gemini-1.5-flash",
+    systemInstruction: "You are a creative writer.",
+    generationConfig: {
+      responseMimeType: "application/json",
+      responseSchema: ARTICLE_SCHEMA,
+    },
+  });
 
   try {
     const wordListString = words.join(", ");
     const prompt = `
-      Write a creative, engaging short story or article (approx 300 words) that naturally integrates the following vocabulary words:
-      ${wordListString}
-
-      Requirements:
-      1. The context should be interesting (e.g., a sci-fi snippet, a modern dialogue, or a news report).
-      2. Use the words correctly in context.
-      3. Return a JSON object with a 'title' and the 'content'.
+      Write a creative, engaging short story (approx 300 words) using these words: ${wordListString}.
+      Context: Sci-fi, modern dialogue, or news.
+      Return JSON with 'title' and 'content'.
     `;
 
-    const response = await ai.models.generateContent({
-      model: 'gemini-2.5-flash',
-      contents: prompt,
-      config: {
-        responseMimeType: "application/json",
-        responseSchema: ARTICLE_SCHEMA,
-        systemInstruction: "You are a creative writer.",
-      },
-    });
+    const result = await model.generateContent(prompt);
+    const response = await result.response;
+    const text = cleanJsonText(response.text());
 
-    const text = response.text;
     if (!text) throw new Error("No response from AI");
 
-    const result = JSON.parse(text);
+    const resultData = JSON.parse(text);
     return {
       id: crypto.randomUUID(),
       timestamp: Date.now(),
-      title: result.title,
-      content: result.content,
+      title: resultData.title,
+      content: resultData.content,
       targetWords: words,
     };
 
@@ -218,21 +212,17 @@ export const generateArticle = async (words: string[]): Promise<GeneratedArticle
 };
 
 export const lookupWord = async (word: string): Promise<FlashcardData> => {
-  // 1. Check Cache
   const cached = getWordFromCache(word);
   if (cached) return cached;
 
-  // 2. Strict Validation
   const isValid = await validateWordWithDictionary(word);
   if (!isValid) {
     throw new Error(`Word not found in dictionary: ${word}`);
   }
 
-  // 3. Fetch if not in cache
   try {
     const cards = await generateFlashcards([word]);
     if (cards && cards.length > 0) {
-      // 4. Save to Cache
       saveWordToCache(word, cards[0]);
       return cards[0];
     }
