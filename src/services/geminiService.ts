@@ -2,10 +2,14 @@ import { GoogleGenerativeAI, SchemaType } from "@google/generative-ai";
 import { FlashcardData, GeneratedArticle } from "../types";
 import { initializeReviewData } from "../utils/srs";
 
-// ✅ Key 保持不动
-const API_KEY = "AIzaSyB8D5MbiI-kDKOmeo6xNLxAwzCMTW6gl5w";
+// ✅ 安全写法：让代码去 Vercel 的保险箱里拿密码
+// ❌ 千万不要再在这里粘贴你的 Key 了！
+const API_KEY = import.meta.env.VITE_GEMINI_API_KEY || "";
 
 const getAIClient = () => {
+  if (!API_KEY) {
+    console.error("API Key is missing! Check Vercel Environment Variables.");
+  }
   return new GoogleGenerativeAI(API_KEY);
 };
 
@@ -91,7 +95,7 @@ const validateWordWithDictionary = async (word: string): Promise<boolean> => {
 export const generateFlashcards = async (words: string[]): Promise<FlashcardData[]> => {
   const genAI = getAIClient();
   
-  // 🔴 关键修正：使用你账号里查到的 2.5 版本
+  // ✅ 保持使用 gemini-2.5-flash (因为刚才确认了你有这个权限)
   const model = genAI.getGenerativeModel({
     model: "gemini-2.5-flash", 
     systemInstruction: "You are an expert language tutor.",
@@ -123,7 +127,7 @@ export const generateFlashcards = async (words: string[]): Promise<FlashcardData
 export const generateArticle = async (words: string[]): Promise<GeneratedArticle> => {
   const genAI = getAIClient();
   
-  // 🔴 关键修正：使用你账号里查到的 2.5 版本
+  // ✅ 保持使用 gemini-2.5-flash
   const model = genAI.getGenerativeModel({
     model: "gemini-2.5-flash",
     systemInstruction: "You are a creative writer.",
