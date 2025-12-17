@@ -6,9 +6,6 @@ const API_KEY = "AIzaSyB8D5MbiI-kDKOmeo6xNLxAwzCMTW6gl5w";
 
 // Lazy initialization helper
 const getAIClient = () => {
-  if (!API_KEY) {
-    throw new Error("API Key is missing. Please check your .env file or Vercel settings.");
-  }
   return new GoogleGenerativeAI(API_KEY);
 };
 
