@@ -2,6 +2,7 @@ import { GoogleGenerativeAI, SchemaType } from "@google/generative-ai";
 import { FlashcardData, GeneratedArticle } from "../types";
 import { initializeReviewData } from "../utils/srs";
 
+// ⚠️ 你的 Key 已经填好了，不用动
 const API_KEY = "AIzaSyB8D5MbiI-kDKOmeo6xNLxAwzCMTW6gl5w";
 
 // Lazy initialization helper
@@ -9,7 +10,7 @@ const getAIClient = () => {
   return new GoogleGenerativeAI(API_KEY);
 };
 
-// 2. Schema 定义需要使用 SchemaType
+// 2. Schema 定义
 const FLASHCARD_SCHEMA = {
   type: SchemaType.ARRAY,
   items: {
@@ -62,7 +63,6 @@ const ARTICLE_SCHEMA = {
 };
 
 // --- Helper: Clean JSON string from Markdown ---
-// 防止 AI 返回 ```json ... ``` 导致解析失败
 const cleanJsonText = (text: string): string => {
   return text.replace(/```json/g, "").replace(/```/g, "").trim();
 };
@@ -100,7 +100,6 @@ const validateWordWithDictionary = async (word: string): Promise<boolean> => {
     return true;
   } catch (error) {
     console.warn(`Dictionary validation error for ${word}:`, error);
-    // 如果字典API挂了，为了不阻塞用户，我们暂时放行 (返回 true)，或者严格拦截 (返回 false)
     return false; 
   }
 };
@@ -108,9 +107,9 @@ const validateWordWithDictionary = async (word: string): Promise<boolean> => {
 export const generateFlashcards = async (words: string[]): Promise<FlashcardData[]> => {
   const genAI = getAIClient();
   
-  // 3. 使用正确的模型名称 (1.5-flash)
+  // 🔴 修改点 1：改成了 gemini-1.5-flash-latest
   const model = genAI.getGenerativeModel({
-    model: "gemini-1.5-flash", 
+    model: "gemini-1.5-flash-latest", 
     systemInstruction: "You are an expert language tutor. You prioritize dictionary accuracy above all else.",
     generationConfig: {
       responseMimeType: "application/json",
@@ -145,7 +144,7 @@ export const generateFlashcards = async (words: string[]): Promise<FlashcardData
 
     const result = await model.generateContent(prompt);
     const response = await result.response;
-    const text = cleanJsonText(response.text()); // 安全解析
+    const text = cleanJsonText(response.text());
 
     if (!text) throw new Error("No response from AI");
 
@@ -168,8 +167,9 @@ export const generateFlashcards = async (words: string[]): Promise<FlashcardData
 
 export const generateArticle = async (words: string[]): Promise<GeneratedArticle> => {
   const genAI = getAIClient();
+  // 🔴 修改点 2：改成了 gemini-1.5-flash-latest
   const model = genAI.getGenerativeModel({
-    model: "gemini-1.5-flash",
+    model: "gemini-1.5-flash-latest",
     systemInstruction: "You are a creative writer.",
     generationConfig: {
       responseMimeType: "application/json",
