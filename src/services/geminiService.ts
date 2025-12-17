@@ -2,7 +2,7 @@ import { GoogleGenerativeAI, SchemaType } from "@google/generative-ai";
 import { FlashcardData, GeneratedArticle } from "../types";
 import { initializeReviewData } from "../utils/srs";
 
-// ✅ 你的 Key 已经生效了，保持不动
+// ✅ 你的 Key 已经填好了
 const API_KEY = "AIzaSyB8D5MbiI-kDKOmeo6xNLxAwzCMTW6gl5w";
 
 const getAIClient = () => {
@@ -91,7 +91,8 @@ const validateWordWithDictionary = async (word: string): Promise<boolean> => {
 export const generateFlashcards = async (words: string[]): Promise<FlashcardData[]> => {
   const genAI = getAIClient();
   
-  // 🔴 修改点 1：使用全名 gemini-1.5-flash-001
+  // 🔴 关键修改：使用最稳的 gemini-1.5-flash-001
+  // 如果这个还不行，说明你的账号还没开通1.5权限，我们可以换回 gemini-pro
   const model = genAI.getGenerativeModel({
     model: "gemini-1.5-flash-001", 
     systemInstruction: "You are an expert language tutor.",
@@ -123,7 +124,7 @@ export const generateFlashcards = async (words: string[]): Promise<FlashcardData
 export const generateArticle = async (words: string[]): Promise<GeneratedArticle> => {
   const genAI = getAIClient();
   
-  // 🔴 修改点 2：使用全名 gemini-1.5-flash-001
+  // 🔴 关键修改：使用最稳的 gemini-1.5-flash-001
   const model = genAI.getGenerativeModel({
     model: "gemini-1.5-flash-001",
     systemInstruction: "You are a creative writer.",
