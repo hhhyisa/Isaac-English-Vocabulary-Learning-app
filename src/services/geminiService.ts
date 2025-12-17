@@ -2,9 +2,7 @@ import { GoogleGenerativeAI, SchemaType } from "@google/generative-ai";
 import { FlashcardData, GeneratedArticle } from "../types";
 import { initializeReviewData } from "../utils/srs";
 
-// 1. 这里的 Key 必须用 Vite 的方式获取
-// 如果你不想用 Vercel 环境变量，想暴力测试，可以直接 const API_KEY = "你的key";
-const API_KEY = import.meta.env.VITE_GEMINI_API_KEY || "";
+const API_KEY = "AIzaSyB8D5MbiI-kDKOmeo6xNLxAwzCMTW6gl5w";
 
 // Lazy initialization helper
 const getAIClient = () => {
