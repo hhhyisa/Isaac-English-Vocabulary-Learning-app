@@ -2,14 +2,14 @@ import { GoogleGenerativeAI, SchemaType } from "@google/generative-ai";
 import { FlashcardData, GeneratedArticle } from "../types";
 import { initializeReviewData } from "../utils/srs";
 
-// ✅ 你的 Key 已经填好了
+// ✅ Key 保持不动
 const API_KEY = "AIzaSyB8D5MbiI-kDKOmeo6xNLxAwzCMTW6gl5w";
 
 const getAIClient = () => {
   return new GoogleGenerativeAI(API_KEY);
 };
 
-// --- 1. 定义数据结构 ---
+// --- 1. Schema 定义 ---
 const FLASHCARD_SCHEMA = {
   type: SchemaType.ARRAY,
   items: {
@@ -91,10 +91,9 @@ const validateWordWithDictionary = async (word: string): Promise<boolean> => {
 export const generateFlashcards = async (words: string[]): Promise<FlashcardData[]> => {
   const genAI = getAIClient();
   
-  // 🔴 关键修改：使用最稳的 gemini-1.5-flash-001
-  // 如果这个还不行，说明你的账号还没开通1.5权限，我们可以换回 gemini-pro
+  // 🔴 关键修正：使用你账号里查到的 2.5 版本
   const model = genAI.getGenerativeModel({
-    model: "gemini-1.5-flash-001", 
+    model: "gemini-2.5-flash", 
     systemInstruction: "You are an expert language tutor.",
     generationConfig: {
       responseMimeType: "application/json",
@@ -124,9 +123,9 @@ export const generateFlashcards = async (words: string[]): Promise<FlashcardData
 export const generateArticle = async (words: string[]): Promise<GeneratedArticle> => {
   const genAI = getAIClient();
   
-  // 🔴 关键修改：使用最稳的 gemini-1.5-flash-001
+  // 🔴 关键修正：使用你账号里查到的 2.5 版本
   const model = genAI.getGenerativeModel({
-    model: "gemini-1.5-flash-001",
+    model: "gemini-2.5-flash",
     systemInstruction: "You are a creative writer.",
     generationConfig: {
       responseMimeType: "application/json",
