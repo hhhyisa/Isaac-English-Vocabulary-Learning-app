@@ -95,9 +95,8 @@ const validateWordWithDictionary = async (word: string): Promise<boolean> => {
 export const generateFlashcards = async (words: string[]): Promise<FlashcardData[]> => {
   const genAI = getAIClient();
   
-  // ✅ 保持使用 gemini-2.5-flash (因为刚才确认了你有这个权限)
   const model = genAI.getGenerativeModel({
-    model: "gemini-1.5-flash", 
+    model: "gemini-1.5-flash-001", 
     systemInstruction: "You are an expert language tutor.",
     generationConfig: {
       responseMimeType: "application/json",
@@ -127,9 +126,8 @@ export const generateFlashcards = async (words: string[]): Promise<FlashcardData
 export const generateArticle = async (words: string[]): Promise<GeneratedArticle> => {
   const genAI = getAIClient();
   
-  // ✅ 保持使用 gemini-2.5-flash
   const model = genAI.getGenerativeModel({
-    model: "gemini-1.5-flash",
+    model: "gemini-1.5-flash-001",
     systemInstruction: "You are a creative writer.",
     generationConfig: {
       responseMimeType: "application/json",
