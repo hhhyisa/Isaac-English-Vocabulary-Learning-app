@@ -96,7 +96,7 @@ export const generateFlashcards = async (words: string[]): Promise<FlashcardData
   const genAI = getAIClient();
   
   const model = genAI.getGenerativeModel({
-    model: "gemini-pro", 
+    model: "gemini-3.0-pro-preview", 
     systemInstruction: "You are an expert language tutor.",
     generationConfig: {
       responseMimeType: "application/json",
@@ -127,7 +127,7 @@ export const generateArticle = async (words: string[]): Promise<GeneratedArticle
   const genAI = getAIClient();
   
   const model = genAI.getGenerativeModel({
-    model: "gemini-pro",
+    model: "gemini-3.0-pro-preview",
     systemInstruction: "You are a creative writer.",
     generationConfig: {
       responseMimeType: "application/json",
